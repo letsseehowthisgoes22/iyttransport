@@ -28,7 +28,7 @@ const StaffDashboard = () => {
   useEffect(() => {
     const fetchTransports = async () => {
       try {
-        const response = await axios.get('/api/transports');
+        const response = await axios.get('https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports');
         setTransports(response.data);
         
         const inProgress = response.data.find(t => t.status === 'in-progress');
@@ -52,7 +52,7 @@ const StaffDashboard = () => {
 
     const fetchLocationHistory = async () => {
       try {
-        const response = await axios.get(`/api/transports/${selectedTransportId}/locations`);
+        const response = await axios.get(`https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports/${selectedTransportId}/locations`);
         setLocationUpdates(response.data);
       } catch (error) {
         console.error('Failed to fetch location history:', error);
@@ -95,7 +95,7 @@ const StaffDashboard = () => {
 
   const handleStartTransport = async (transportId) => {
     try {
-      await axios.put(`/api/transports/${transportId}/status`, { status: 'in-progress' });
+      await axios.put(`https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports/${transportId}/status`, { status: 'in-progress' });
       
       setTransports(prev => prev.map(t => 
         t.id === transportId ? { ...t, status: 'in-progress' } : t
@@ -116,7 +116,7 @@ const StaffDashboard = () => {
 
   const handleCompleteTransport = async (transportId) => {
     try {
-      await axios.put(`/api/transports/${transportId}/status`, { status: 'completed' });
+      await axios.put(`https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports/${transportId}/status`, { status: 'completed' });
       
       setTransports(prev => prev.map(t => 
         t.id === transportId ? { ...t, status: 'completed' } : t

@@ -44,5 +44,5 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1"
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com"
 }

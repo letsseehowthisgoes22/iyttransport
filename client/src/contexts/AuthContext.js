@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('/api/auth/me');
+          const response = await axios.get('https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/auth/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axios.post('https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/auth/login', { email, password });
       const { user, token } = response.data;
       
       setUser(user);
