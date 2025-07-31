@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import config from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import useSocket from '../hooks/useSocket';
 import TransportMap from './TransportMap';
@@ -17,7 +18,7 @@ const FamilyDashboard = () => {
   useEffect(() => {
     const fetchTransports = async () => {
       try {
-        const response = await axios.get('https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports');
+        const response = await axios.get(`${config.API_BASE_URL}/api/transports`);
         setTransports(response.data);
         
         const active = response.data.find(t => t.status === 'in-progress');
@@ -42,7 +43,7 @@ const FamilyDashboard = () => {
 
     const fetchLocationHistory = async () => {
       try {
-        const response = await axios.get(`https://user:03f65c4915e266a652e4535d3922cd9d@live-location-tracking-app-tunnel-evcke7qz.devinapps.com/api/transports/${selectedTransportId}/locations`);
+        const response = await axios.get(`${config.API_BASE_URL}/api/transports/${selectedTransportId}/locations`);
         setLocationUpdates(response.data);
       } catch (error) {
         console.error('Failed to fetch location history:', error);

@@ -1,10 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Database = require('../database');
 
 const router = express.Router();
-const db = new Database();
+
+let db;
 
 router.post('/login', async (req, res) => {
   try {
@@ -75,4 +75,7 @@ router.get('/me', require('../middleware/auth').authenticateToken, (req, res) =>
   res.json({ user: userInfo });
 });
 
-module.exports = router;
+module.exports = (database) => {
+  db = database;
+  return router;
+};
