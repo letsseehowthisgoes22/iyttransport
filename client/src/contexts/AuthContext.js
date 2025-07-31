@@ -28,8 +28,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('https://iyttransport-backend.onrender.com
-');
+          const response = await axios.get('https://iyttransport-backend.onrender.com/api/auth/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -44,20 +43,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('https://iyttransport-backend.onrender.com
-', { email, password });
+      const response = await axios.post('https://iyttransport-backend.onrender.com/api/auth/login', { email, password });
       const { user, token } = response.data;
-      
+
       setUser(user);
       setToken(token);
       localStorage.setItem('token', token);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+        error: error.response?.data?.error || 'Login failed'
       };
     }
   };
