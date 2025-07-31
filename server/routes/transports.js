@@ -1,9 +1,9 @@
 const express = require('express');
-const Database = require('../database');
 const { authenticateToken, requireRole, validateTransportAccess } = require('../middleware/auth');
 
 const router = express.Router();
-const db = new Database();
+
+let db;
 
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -112,4 +112,7 @@ router.post('/:id/locations', authenticateToken, requireRole(['Staff']), async (
   }
 });
 
-module.exports = router;
+module.exports = (database) => {
+  db = database;
+  return router;
+};

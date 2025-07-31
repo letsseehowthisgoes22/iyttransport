@@ -21,7 +21,7 @@ async function seedDatabase() {
 
     console.log('Created test users');
 
-    await db.db.run('UPDATE clients SET assigned_clinician_id = ? WHERE id IN (?, ?)', [clinicianId, client1Id, client2Id]);
+    await db.pool.query('UPDATE clients SET assigned_clinician_id = $1 WHERE id IN ($2, $3)', [clinicianId, client1Id, client2Id]);
 
     console.log('Assigned clinician to clients');
 

@@ -1,152 +1,150 @@
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-const path = require('path');
 
 class Database {
   constructor() {
-    const dbPath = process.env.DB_PATH || './database.sqlite';
-    this.db = new sqlite3.Database(dbPath);
+    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Connected to PostgreSQL' : 'No DATABASE_URL found');
+    this.pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
     this.init();
   }
 
-  init() {
-    this.db.serialize(() => {
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          email TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          role TEXT NOT NULL CHECK (role IN ('Admin', 'Staff', 'Clinician', 'Family')),
-          client_id INTEGER,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (client_id) REFERENCES clients (id)
-        )
-      `);
-
-      this.db.run(`
+  async init() {
+    try {
+      await this.pool.query(`
         CREATE TABLE IF NOT EXISTS clients (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
           assigned_clinician_id INTEGER,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (assigned_clinician_id) REFERENCES users (id)
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
-      this.db.run(`
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          role VARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Staff', 'Clinician', 'Family')),
+          client_id INTEGER,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await this.pool.query(`
         CREATE TABLE IF NOT EXISTS transports (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id SERIAL PRIMARY KEY,
           client_id INTEGER NOT NULL,
           staff_id INTEGER NOT NULL,
-          start_time DATETIME,
-          end_time DATETIME,
-          status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
-          start_lat REAL,
-          start_lng REAL,
-          dest_lat REAL,
-          dest_lng REAL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (client_id) REFERENCES clients (id),
-          FOREIGN KEY (staff_id) REFERENCES users (id)
+          start_time TIMESTAMP,
+          end_time TIMESTAMP,
+          status VARCHAR(50) NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+          start_lat DECIMAL(10, 8),
+          start_lng DECIMAL(11, 8),
+          dest_lat DECIMAL(10, 8),
+          dest_lng DECIMAL(11, 8),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
-      this.db.run(`
+      await this.pool.query(`
         CREATE TABLE IF NOT EXISTS location_updates (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id SERIAL PRIMARY KEY,
           transport_id INTEGER NOT NULL,
-          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-          latitude REAL NOT NULL,
-          longitude REAL NOT NULL,
-          accuracy REAL,
-          FOREIGN KEY (transport_id) REFERENCES transports (id)
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          latitude DECIMAL(10, 8) NOT NULL,
+          longitude DECIMAL(11, 8) NOT NULL,
+          accuracy DECIMAL(6, 2)
         )
       `);
-    });
+
+      console.log('Skipping foreign key constraint creation - tables created successfully');
+      
+      console.log('Database tables initialized successfully');
+    } catch (error) {
+      console.error('Error initializing database tables:', error);
+      throw error;
+    }
   }
 
   async createUser(name, email, password, role, clientId = null) {
-    return new Promise((resolve, reject) => {
+    try {
       const passwordHash = bcrypt.hashSync(password, 10);
-      this.db.run(
-        'INSERT INTO users (name, email, password_hash, role, client_id) VALUES (?, ?, ?, ?, ?)',
-        [name, email, passwordHash, role, clientId],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
+      const result = await this.pool.query(
+        'INSERT INTO users (name, email, password_hash, role, client_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [name, email, passwordHash, role, clientId]
       );
-    });
+      return result.rows[0].id;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getUserByEmail(email) {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT * FROM users WHERE email = ?',
-        [email],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
+    try {
+      const result = await this.pool.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
       );
-    });
+      return result.rows[0] || null;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getUserById(id) {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT * FROM users WHERE id = ?',
-        [id],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
+    try {
+      const result = await this.pool.query(
+        'SELECT * FROM users WHERE id = $1',
+        [id]
       );
-    });
+      return result.rows[0] || null;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async createClient(name, assignedClinicianId = null) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'INSERT INTO clients (name, assigned_clinician_id) VALUES (?, ?)',
-        [name, assignedClinicianId],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
+    try {
+      const result = await this.pool.query(
+        'INSERT INTO clients (name, assigned_clinician_id) VALUES ($1, $2) RETURNING id',
+        [name, assignedClinicianId]
       );
-    });
+      return result.rows[0].id;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getClientsByClinicianId(clinicianId) {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        'SELECT * FROM clients WHERE assigned_clinician_id = ?',
-        [clinicianId],
-        (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        }
+    try {
+      const result = await this.pool.query(
+        'SELECT * FROM clients WHERE assigned_clinician_id = $1',
+        [clinicianId]
       );
-    });
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async createTransport(clientId, staffId, startLat = null, startLng = null, destLat = null, destLng = null) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'INSERT INTO transports (client_id, staff_id, start_lat, start_lng, dest_lat, dest_lng) VALUES (?, ?, ?, ?, ?, ?)',
-        [clientId, staffId, startLat, startLng, destLat, destLng],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
+    try {
+      const result = await this.pool.query(
+        'INSERT INTO transports (client_id, staff_id, start_lat, start_lng, dest_lat, dest_lng) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [clientId, staffId, startLat, startLng, destLat, destLng]
       );
-    });
+      return result.rows[0].id;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getTransportsByRole(userId, role) {
-    return new Promise((resolve, reject) => {
+    try {
       let query;
       let params;
 
@@ -167,7 +165,7 @@ class Database {
             FROM transports t 
             JOIN clients c ON t.client_id = c.id 
             JOIN users u ON t.staff_id = u.id
-            WHERE t.staff_id = ?
+            WHERE t.staff_id = $1
             ORDER BY t.created_at DESC
           `;
           params = [userId];
@@ -178,7 +176,7 @@ class Database {
             FROM transports t 
             JOIN clients c ON t.client_id = c.id 
             JOIN users u ON t.staff_id = u.id
-            WHERE c.assigned_clinician_id = ?
+            WHERE c.assigned_clinician_id = $1
             ORDER BY t.created_at DESC
           `;
           params = [userId];
@@ -190,99 +188,90 @@ class Database {
             JOIN clients c ON t.client_id = c.id 
             JOIN users u ON t.staff_id = u.id
             JOIN users f ON f.client_id = c.id
-            WHERE f.id = ?
+            WHERE f.id = $1
             ORDER BY t.created_at DESC
           `;
           params = [userId];
           break;
         default:
-          reject(new Error('Invalid role'));
-          return;
+          throw new Error('Invalid role');
       }
 
-      this.db.all(query, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+      const result = await this.pool.query(query, params);
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async updateTransportStatus(transportId, status, userId, role) {
-    return new Promise((resolve, reject) => {
+    try {
       let permissionQuery;
       let permissionParams;
 
       switch (role) {
         case 'Admin':
-          permissionQuery = 'SELECT id FROM transports WHERE id = ?';
+          permissionQuery = 'SELECT id FROM transports WHERE id = $1';
           permissionParams = [transportId];
           break;
         case 'Staff':
-          permissionQuery = 'SELECT id FROM transports WHERE id = ? AND staff_id = ?';
+          permissionQuery = 'SELECT id FROM transports WHERE id = $1 AND staff_id = $2';
           permissionParams = [transportId, userId];
           break;
         default:
-          reject(new Error('Insufficient permissions'));
-          return;
+          throw new Error('Insufficient permissions');
       }
 
-      this.db.get(permissionQuery, permissionParams, (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        if (!row) {
-          reject(new Error('Transport not found or insufficient permissions'));
-          return;
-        }
+      const permissionResult = await this.pool.query(permissionQuery, permissionParams);
+      if (permissionResult.rows.length === 0) {
+        throw new Error('Transport not found or insufficient permissions');
+      }
 
-        const updateTime = status === 'in-progress' ? 'start_time = CURRENT_TIMESTAMP' : 
-                          status === 'completed' ? 'end_time = CURRENT_TIMESTAMP' : '';
-        
-        const query = updateTime ? 
-          `UPDATE transports SET status = ?, ${updateTime} WHERE id = ?` :
-          'UPDATE transports SET status = ? WHERE id = ?';
+      const updateTime = status === 'in-progress' ? 'start_time = CURRENT_TIMESTAMP' : 
+                        status === 'completed' ? 'end_time = CURRENT_TIMESTAMP' : '';
+      
+      const query = updateTime ? 
+        `UPDATE transports SET status = $1, ${updateTime} WHERE id = $2` :
+        'UPDATE transports SET status = $1 WHERE id = $2';
 
-        this.db.run(query, [status, transportId], function(err) {
-          if (err) reject(err);
-          else resolve(this.changes);
-        });
-      });
-    });
+      const result = await this.pool.query(query, [status, transportId]);
+      return result.rowCount;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async addLocationUpdate(transportId, latitude, longitude, accuracy = null) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'INSERT INTO location_updates (transport_id, latitude, longitude, accuracy) VALUES (?, ?, ?, ?)',
-        [transportId, latitude, longitude, accuracy],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
+    try {
+      const result = await this.pool.query(
+        'INSERT INTO location_updates (transport_id, latitude, longitude, accuracy) VALUES ($1, $2, $3, $4) RETURNING id',
+        [transportId, latitude, longitude, accuracy]
       );
-    });
+      return result.rows[0].id;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getLocationHistory(transportId, userId, role) {
-    return new Promise((resolve, reject) => {
+    try {
       let permissionQuery;
       let permissionParams;
 
       switch (role) {
         case 'Admin':
-          permissionQuery = 'SELECT id FROM transports WHERE id = ?';
+          permissionQuery = 'SELECT id FROM transports WHERE id = $1';
           permissionParams = [transportId];
           break;
         case 'Staff':
-          permissionQuery = 'SELECT id FROM transports WHERE id = ? AND staff_id = ?';
+          permissionQuery = 'SELECT id FROM transports WHERE id = $1 AND staff_id = $2';
           permissionParams = [transportId, userId];
           break;
         case 'Clinician':
           permissionQuery = `
             SELECT t.id FROM transports t 
             JOIN clients c ON t.client_id = c.id 
-            WHERE t.id = ? AND c.assigned_clinician_id = ?
+            WHERE t.id = $1 AND c.assigned_clinician_id = $2
           `;
           permissionParams = [transportId, userId];
           break;
@@ -291,39 +280,31 @@ class Database {
             SELECT t.id FROM transports t 
             JOIN clients c ON t.client_id = c.id 
             JOIN users f ON f.client_id = c.id
-            WHERE t.id = ? AND f.id = ?
+            WHERE t.id = $1 AND f.id = $2
           `;
           permissionParams = [transportId, userId];
           break;
         default:
-          reject(new Error('Invalid role'));
-          return;
+          throw new Error('Invalid role');
       }
 
-      this.db.get(permissionQuery, permissionParams, (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        if (!row) {
-          reject(new Error('Transport not found or insufficient permissions'));
-          return;
-        }
+      const permissionResult = await this.pool.query(permissionQuery, permissionParams);
+      if (permissionResult.rows.length === 0) {
+        throw new Error('Transport not found or insufficient permissions');
+      }
 
-        this.db.all(
-          'SELECT * FROM location_updates WHERE transport_id = ? ORDER BY timestamp DESC',
-          [transportId],
-          (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-          }
-        );
-      });
-    });
+      const result = await this.pool.query(
+        'SELECT * FROM location_updates WHERE transport_id = $1 ORDER BY timestamp DESC',
+        [transportId]
+      );
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  close() {
-    this.db.close();
+  async close() {
+    await this.pool.end();
   }
 }
 
