@@ -12,15 +12,11 @@ const authRoutes = require('./routes/auth');
 const transportRoutes = require('./routes/transports');
 
 const app = express();
-app.use(cors({
-  origin: 'https://iyttransport-frontend.onrender.com', // <--- YOUR frontend Render URL
-  credentials: true
-}));
 
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: true,
+    origin: ['https://iyttransport-frontend.onrender.com', 'http://localhost:3000'],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -32,7 +28,7 @@ const db = new Database();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: true,
+  origin: ['https://iyttransport-frontend.onrender.com', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(morgan('combined'));
