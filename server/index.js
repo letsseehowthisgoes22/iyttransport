@@ -12,6 +12,11 @@ const authRoutes = require('./routes/auth');
 const transportRoutes = require('./routes/transports');
 
 const app = express();
+app.use(cors({
+  origin: 'https://iyttransport-frontend.onrender.com', // <--- YOUR frontend Render URL
+  credentials: true
+}));
+
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
