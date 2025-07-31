@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 
+// Add this import to use config (you need to have client/src/config.js)
+import config from '../config';
+
 const useSocket = () => {
   const { token, user } = useAuth();
   const socketRef = useRef(null);
@@ -13,12 +16,20 @@ const useSocket = () => {
       return;
     }
 
-    socketRef.current = io('http://localhost:5000', {
+    // Use your deployed backend URL instead of localhost!
+    // Option 1: Hardcode for prod (RECOMMENDED for now)
+    socketRef.current = io('https://iyttransport-backend.onrender.com', {
       auth: {
         token: token
       },
       transports: ['websocket', 'polling']
     });
+
+    // Option 2: If you set REACT_APP_API_URL in .env, use:
+    // socketRef.current = io(config.API_BASE_URL, {
+    //   auth: { token: token },
+    //   transports: ['websocket', 'polling']
+    // });
 
     const socket = socketRef.current;
 
@@ -56,7 +67,6 @@ const useSocket = () => {
       console.error('Socket not connected');
       return false;
     }
-
     const locationData = {
       transportId,
       latitude,
@@ -64,7 +74,6 @@ const useSocket = () => {
       accuracy,
       timestamp: new Date().toISOString()
     };
-
     console.log('Sending location update:', locationData);
     socketRef.current.emit('location_update', locationData);
     return true;
@@ -75,13 +84,11 @@ const useSocket = () => {
       console.error('Socket not connected');
       return false;
     }
-
     const statusData = {
       transportId,
       status,
       timestamp: new Date().toISOString()
     };
-
     console.log('Sending transport status update:', statusData);
     socketRef.current.emit('transport_status_update', statusData);
     return true;
