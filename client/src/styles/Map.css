@@ -1,0 +1,188 @@
+/* Map container styling */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* Custom marker styling */
+.custom-marker {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile responsive map controls */
+@media (max-width: 768px) {
+  .leaflet-control-container {
+    font-size: 14px;
+  }
+  
+  .leaflet-control-zoom {
+    margin-left: 10px !important;
+    margin-top: 10px !important;
+  }
+  
+  .leaflet-control-attribution {
+    font-size: 10px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+  }
+}
+
+/* Loading states */
+.map-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #666;
+  font-size: 16px;
+}
+
+/* Error states */
+.map-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  background-color: #ffe6e6;
+  border: 1px solid #ff9999;
+  border-radius: 8px;
+  color: #d32f2f;
+  text-align: center;
+  padding: 20px;
+}
+
+.map-error h4 {
+  margin: 0 0 10px 0;
+  color: #d32f2f;
+}
+
+.map-error p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Role-specific UI styling */
+.role-admin {
+  border-left: 4px solid #007bff;
+}
+
+.role-staff {
+  border-left: 4px solid #28a745;
+}
+
+.role-clinician {
+  border-left: 4px solid #17a2b8;
+}
+
+.role-family {
+  border-left: 4px solid #ffc107;
+}
+
+/* Transport status indicators */
+.status-scheduled {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-in-progress {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-completed {
+  background-color: #cce7ff;
+  color: #004085;
+  border: 1px solid #99d6ff;
+}
+
+.status-cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f1aeb5;
+}
+
+/* Live indicator animation */
+.live-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 480px) {
+  .transport-card {
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  .transport-card h4 {
+    font-size: 16px;
+  }
+  
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .dashboard-header h2 {
+    font-size: 20px;
+  }
+}
+
+/* Accessibility improvements */
+.transport-card:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .leaflet-container {
+    filter: contrast(1.2);
+  }
+  
+  .transport-card {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .live-indicator {
+    animation: none;
+  }
+  
+  * {
+    transition: none !important;
+  }
+}
