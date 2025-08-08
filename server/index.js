@@ -111,6 +111,22 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/me', authMiddleware, (req, res) => {
   res.json({ user: req.user });
 });
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.get('/api/transports', authMiddleware, async (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/transports/:id/locations', authMiddleware, async (req, res) => {
+  res.json([]);
+});
+
+app.put('/api/transports/:id/status', authMiddleware, async (req, res) => {
+  res.json({ ok: true });
+});
+
 
 initDb().then(() => {
   app.listen(PORT, () => {
