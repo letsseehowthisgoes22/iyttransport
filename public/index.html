@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Bot Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #ff4500;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff4500;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .comment-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+        
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .comment-content {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #ff4500;
+        }
+        
+        .comment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background: #218838;
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background: #c82333;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Reddit Bot Control Panel</h1>
+            <p>Manage multiple Reddit accounts for natural conversations about retatrutide</p>
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="activeAccounts">-</div>
+                <div class="stat-label">Active Accounts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingComments">-</div>
+                <div class="stat-label">Pending Comments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="approvedComments">-</div>
+                <div class="stat-label">Approved Comments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalComments">-</div>
+                <div class="stat-label">Total Comments Posted</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Generate Comment</h2>
+            <div id="generateError" class="error" style="display: none;"></div>
+            <div id="generateSuccess" class="success" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label for="postUrl">Reddit Post URL:</label>
+                <input type="url" id="postUrl" placeholder="https://old.reddit.com/r/subreddit/comments/...">
+            </div>
+            
+            <div class="form-group">
+                <label for="postTitle">Post Title:</label>
+                <input type="text" id="postTitle" placeholder="Enter the post title">
+            </div>
+            
+            <div class="form-group">
+                <label for="subreddit">Subreddit:</label>
+                <input type="text" id="subreddit" placeholder="e.g., loseit, diabetes, keto">
+            </div>
+            
+            <div class="form-group">
+                <label for="commentStyle">Comment Style:</label>
+                <select id="commentStyle">
+                    <option value="">Random</option>
+                    <option value="curious_researcher">Curious Researcher</option>
+                    <option value="experienced_patient">Experienced Patient</option>
+                    <option value="healthcare_professional">Healthcare Professional</option>
+                    <option value="concerned_family_member">Concerned Family Member</option>
+                    <option value="fitness_enthusiast">Fitness Enthusiast</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" onclick="generateComment()">Generate Comment</button>
+        </div>
+        
+        <div class="section">
+            <h2>Pending Comments for Approval</h2>
+            <div id="pendingCommentsContainer">
+                <div class="loading">Loading pending comments...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Account Management</h2>
+            <div id="accountsContainer">
+                <div class="loading">Loading accounts...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+        
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                return null;
+            }
+        }
+        
+        async function updateStats() {
+            const status = await fetchData('/api/status');
+            if (status) {
+                document.getElementById('activeAccounts').textContent = status.accounts.active;
+                document.getElementById('pendingComments').textContent = status.pendingComments;
+                document.getElementById('approvedComments').textContent = status.approvedComments;
+                document.getElementById('totalComments').textContent = status.accounts.totalComments;
+            }
+        }
+        
+        async function updatePendingComments() {
+            const comments = await fetchData('/api/pending-comments');
+            const container = document.getElementById('pendingCommentsContainer');
+            
+            if (!comments || comments.length === 0) {
+                container.innerHTML = '<div class="empty-state">No pending comments</div>';
+                return;
+            }
+            
+            container.innerHTML = comments.map(comment => `
+                <div class="comment-card">
+                    <div class="comment-meta">
+                        <span><strong>Post:</strong> ${comment.post.title}</span>
+                        <span><strong>Style:</strong> ${comment.style}</span>
+                        <span><strong>Created:</strong> ${new Date(comment.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div class="comment-meta">
+                        <span><strong>Subreddit:</strong> r/${comment.post.subreddit}</span>
+                        <span><strong>Confidence:</strong> ${Math.round(comment.confidence * 100)}%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${comment.confidence * 100}%"></div>
+                    </div>
+                    <div class="comment-content">${comment.comment}</div>
+                    <div class="comment-actions">
+                        <button class="btn btn-approve" onclick="approveComment('${comment.id}')">Approve</button>
+                        <button class="btn btn-reject" onclick="rejectComment('${comment.id}')">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function updateAccounts() {
+            const accounts = await fetchData('/api/accounts');
+            const container = document.getElementById('accountsContainer');
+            
+            if (!accounts || accounts.length === 0) {
+                container.innerHTML = '<div class="empty-state">No accounts configured</div>';
+                return;
+            }
+            
+            container.innerHTML = accounts.map(account => `
+                <div class="comment-card">
+                    <div class="comment-meta">
+                        <span><strong>Username:</strong> ${account.username}</span>
+                        <span><strong>Status:</strong> ${account.status}</span>
+                        <span><strong>Comments Posted:</strong> ${account.commentsPosted || 0}</span>
+                        <span><strong>Last Used:</strong> ${account.lastUsed ? new Date(account.lastUsed).toLocaleString() : 'Never'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function generateComment() {
+            const postUrl = document.getElementById('postUrl').value;
+            const postTitle = document.getElementById('postTitle').value;
+            const subreddit = document.getElementById('subreddit').value;
+            const style = document.getElementById('commentStyle').value;
+            
+            const errorDiv = document.getElementById('generateError');
+            const successDiv = document.getElementById('generateSuccess');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (!postUrl || !postTitle || !subreddit) {
+                errorDiv.textContent = 'Please fill in all required fields';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/generate-comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        postUrl,
+                        postTitle,
+                        subreddit,
+                        style: style || undefined
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    successDiv.textContent = 'Comment generated successfully! Check pending comments below.';
+                    successDiv.style.display = 'block';
+                    
+                    // Clear form
+                    document.getElementById('postUrl').value = '';
+                    document.getElementById('postTitle').value = '';
+                    document.getElementById('subreddit').value = '';
+                    document.getElementById('commentStyle').value = '';
+                    
+                    // Refresh data
+                    updatePendingComments();
+                    updateStats();
+                } else {
+                    errorDiv.textContent = result.message || 'Failed to generate comment';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        async function approveComment(commentId) {
+            try {
+                const response = await fetch(`/api/approve-comment/${commentId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updatePendingComments();
+                    updateStats();
+                } else {
+                    alert('Failed to approve comment: ' + result.message);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+        
+        async function rejectComment(commentId) {
+            try {
+                const response = await fetch(`/api/reject-comment/${commentId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updatePendingComments();
+                    updateStats();
+                } else {
+                    alert('Failed to reject comment: ' + result.message);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+        
+        function startRefresh() {
+            updateStats();
+            updatePendingComments();
+            updateAccounts();
+            
+            refreshInterval = setInterval(() => {
+                updateStats();
+                updatePendingComments();
+                updateAccounts();
+            }, 5000);
+        }
+        
+        // Start the application
+        document.addEventListener('DOMContentLoaded', startRefresh);
+    </script>
+</body>
+</html>
