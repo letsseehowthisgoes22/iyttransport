@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-
-const apiBase = process.env.REACT_APP_API_URL || '';
+import { useAuth } from './contexts/AuthContext';
 
 export default function Login() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
@@ -11,14 +10,11 @@ export default function Login() {
   async function onSubmit(e) {
     e.preventDefault();
     setErr('');
-    try {
-      const res = await axios.post(`${apiBase}/api/auth/login`, { email, password });
-      const { token, user } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      window.location.href = '/dashboard';
-    } catch (e) {
-      setErr('Login failed');
+    const result = await login(email, password);
+    if (result.success) {
+      window.location.href = '/';
+    } else {
+      setErr(result.error || 'Login failed');
     }
   }
 

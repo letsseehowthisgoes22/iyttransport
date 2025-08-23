@@ -1,12 +1,12 @@
 const express = require('express');
 const { authenticateToken, requireRole, validateTransportAccess } = require('../middleware/auth');
+const { getDatabase } = require('../db/client');
 
 const router = express.Router();
 
-let db;
-
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    const db = getDatabase();
     const transports = await db.getTransportsByRole(req.user.id, req.user.role);
     res.json(transports);
   } catch (error) {
@@ -29,6 +29,7 @@ router.post('/', authenticateToken, requireRole(['Admin', 'Staff']), async (req,
       return res.status(400).json({ error: 'Staff ID is required' });
     }
 
+    const db = getDatabase();
     const transportId = await db.createTransport(
       clientId, 
       finalStaffId, 
@@ -57,6 +58,7 @@ router.put('/:id/status', authenticateToken, requireRole(['Admin', 'Staff']), as
       return res.status(400).json({ error: 'Valid status is required' });
     }
 
+    const db = getDatabase();
     const changes = await db.updateTransportStatus(id, status, req.user.id, req.user.role);
     
     if (changes === 0) {
@@ -73,6 +75,7 @@ router.put('/:id/status', authenticateToken, requireRole(['Admin', 'Staff']), as
 router.get('/:id/locations', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const db = getDatabase();
     const locations = await db.getLocationHistory(id, req.user.id, req.user.role);
     res.json(locations);
   } catch (error) {
@@ -99,6 +102,7 @@ router.post('/:id/locations', authenticateToken, requireRole(['Staff']), async (
       return res.status(403).json({ error: 'Access denied to this transport' });
     }
 
+    const db = getDatabase();
     const locationId = await db.addLocationUpdate(id, latitude, longitude, accuracy);
     
     res.status(201).json({
@@ -112,7 +116,4 @@ router.post('/:id/locations', authenticateToken, requireRole(['Staff']), async (
   }
 });
 
-module.exports = (database) => {
-  db = database;
-  return router;
-};
+module.exports = router;

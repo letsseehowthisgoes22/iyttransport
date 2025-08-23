@@ -16,20 +16,13 @@ const useSocket = () => {
       return;
     }
 
-    // Use your deployed backend URL instead of localhost!
-    // Option 1: Hardcode for prod (RECOMMENDED for now)
-    socketRef.current = io('https://iyttransport-backend.onrender.com', {
+    socketRef.current = io(`${config.API_BASE_URL}/transports`, {
+      path: '/ws',
       auth: {
         token: token
       },
       transports: ['websocket', 'polling']
     });
-
-    // Option 2: If you set REACT_APP_API_URL in .env, use:
-    // socketRef.current = io(config.API_BASE_URL, {
-    //   auth: { token: token },
-    //   transports: ['websocket', 'polling']
-    // });
 
     const socket = socketRef.current;
 
@@ -67,15 +60,17 @@ const useSocket = () => {
       console.error('Socket not connected');
       return false;
     }
+    
+    socketRef.current.emit('transport:join', { id: transportId });
+    
     const locationData = {
-      transportId,
-      latitude,
-      longitude,
-      accuracy,
-      timestamp: new Date().toISOString()
+      id: transportId,
+      lat: latitude,
+      lon: longitude,
+      ts: new Date().toISOString()
     };
-    console.log('Sending location update:', locationData);
-    socketRef.current.emit('location_update', locationData);
+    console.log('Sending position update:', locationData);
+    socketRef.current.emit('position:update', locationData);
     return true;
   };
 
@@ -85,31 +80,31 @@ const useSocket = () => {
       return false;
     }
     const statusData = {
-      transportId,
+      id: transportId,
       status,
-      timestamp: new Date().toISOString()
+      note: ''
     };
-    console.log('Sending transport status update:', statusData);
-    socketRef.current.emit('transport_status_update', statusData);
+    console.log('Sending status update:', statusData);
+    socketRef.current.emit('status:update', statusData);
     return true;
   };
 
   const onLocationUpdate = (callback) => {
     if (!socketRef.current) return;
-    socketRef.current.on('location_update', callback);
-    return () => socketRef.current.off('location_update', callback);
+    socketRef.current.on('position:rx', callback);
+    return () => socketRef.current.off('position:rx', callback);
   };
 
   const onLocationUpdateConfirmed = (callback) => {
     if (!socketRef.current) return;
-    socketRef.current.on('location_update_confirmed', callback);
-    return () => socketRef.current.off('location_update_confirmed', callback);
+    socketRef.current.on('position:rx', callback);
+    return () => socketRef.current.off('position:rx', callback);
   };
 
   const onTransportStatusUpdate = (callback) => {
     if (!socketRef.current) return;
-    socketRef.current.on('transport_status_update', callback);
-    return () => socketRef.current.off('transport_status_update', callback);
+    socketRef.current.on('status:rx', callback);
+    return () => socketRef.current.off('status:rx', callback);
   };
 
   return {
