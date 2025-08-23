@@ -1,10 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { getDatabase } = require('../db/client');
 
 const router = express.Router();
-
-let db;
 
 router.post('/login', async (req, res) => {
   try {
@@ -14,6 +13,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    const db = getDatabase();
     const user = await db.getUserByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -53,6 +53,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
+    const db = getDatabase();
     const existingUser = await db.getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
@@ -75,7 +76,4 @@ router.get('/me', require('../middleware/auth').authenticateToken, (req, res) =>
   res.json({ user: userInfo });
 });
 
-module.exports = (database) => {
-  db = database;
-  return router;
-};
+module.exports = router;
