@@ -63,6 +63,31 @@ class Database {
           FOREIGN KEY (transport_id) REFERENCES transports (id)
         )
       `);
+
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS statement_transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          source TEXT NOT NULL CHECK (source IN ('Chase Credit Card', 'Chase Checking', 'PayPal')),
+          transaction_date TEXT NOT NULL,
+          description TEXT NOT NULL,
+          amount REAL NOT NULL,
+          category TEXT,
+          balance REAL,
+          transaction_type TEXT,
+          uploaded_by INTEGER NOT NULL,
+          uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          raw_data TEXT,
+          FOREIGN KEY (uploaded_by) REFERENCES users (id)
+        )
+      `);
+
+      this.db.run(`
+        CREATE INDEX IF NOT EXISTS idx_transactions_date ON statement_transactions(transaction_date)
+      `);
+
+      this.db.run(`
+        CREATE INDEX IF NOT EXISTS idx_transactions_source ON statement_transactions(source)
+      `);
     });
   }
 
@@ -318,6 +343,120 @@ class Database {
             else resolve(rows);
           }
         );
+      });
+    });
+  }
+
+  async createTransaction(source, transactionDate, description, amount, category, balance, transactionType, uploadedBy, rawData) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `INSERT INTO statement_transactions
+        (source, transaction_date, description, amount, category, balance, transaction_type, uploaded_by, raw_data)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [source, transactionDate, description, amount, category, balance, transactionType, uploadedBy, rawData],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+  }
+
+  async createTransactionsBulk(transactions) {
+    return new Promise((resolve, reject) => {
+      const placeholders = transactions.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+      const values = transactions.flatMap(t => [
+        t.source, t.transactionDate, t.description, t.amount,
+        t.category, t.balance, t.transactionType, t.uploadedBy, t.rawData
+      ]);
+
+      this.db.run(
+        `INSERT INTO statement_transactions
+        (source, transaction_date, description, amount, category, balance, transaction_type, uploaded_by, raw_data)
+        VALUES ${placeholders}`,
+        values,
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes);
+        }
+      );
+    });
+  }
+
+  async getTransactionsByUser(userId, filters = {}) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM statement_transactions WHERE uploaded_by = ?';
+      const params = [userId];
+
+      if (filters.source) {
+        query += ' AND source = ?';
+        params.push(filters.source);
+      }
+
+      if (filters.startDate) {
+        query += ' AND transaction_date >= ?';
+        params.push(filters.startDate);
+      }
+
+      if (filters.endDate) {
+        query += ' AND transaction_date <= ?';
+        params.push(filters.endDate);
+      }
+
+      query += ' ORDER BY transaction_date DESC';
+
+      this.db.all(query, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+  }
+
+  async getAllTransactions(filters = {}) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT * FROM statement_transactions WHERE 1=1';
+      const params = [];
+
+      if (filters.source) {
+        query += ' AND source = ?';
+        params.push(filters.source);
+      }
+
+      if (filters.startDate) {
+        query += ' AND transaction_date >= ?';
+        params.push(filters.startDate);
+      }
+
+      if (filters.endDate) {
+        query += ' AND transaction_date <= ?';
+        params.push(filters.endDate);
+      }
+
+      query += ' ORDER BY transaction_date DESC';
+
+      this.db.all(query, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+  }
+
+  async deleteTransaction(transactionId, userId, role) {
+    return new Promise((resolve, reject) => {
+      let query, params;
+
+      if (role === 'Admin') {
+        query = 'DELETE FROM statement_transactions WHERE id = ?';
+        params = [transactionId];
+      } else {
+        query = 'DELETE FROM statement_transactions WHERE id = ? AND uploaded_by = ?';
+        params = [transactionId, userId];
+      }
+
+      this.db.run(query, params, function(err) {
+        if (err) reject(err);
+        else if (this.changes === 0) reject(new Error('Transaction not found or insufficient permissions'));
+        else resolve(this.changes);
       });
     });
   }

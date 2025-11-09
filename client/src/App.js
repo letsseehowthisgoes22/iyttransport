@@ -7,6 +7,7 @@ import StaffDashboard from './components/StaffDashboard';
 import ClinicianDashboard from './components/ClinicianDashboard';
 import FamilyDashboard from './components/FamilyDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import StatementUpload from './components/StatementUpload';
 import './styles/Map.css';
 
 function App() {
@@ -34,6 +35,11 @@ function App() {
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/statements" element={
+              <ProtectedRoute allowedRoles={['Admin', 'Staff']}>
+                <StatementUpload />
               </ProtectedRoute>
             } />
             <Route path="/" element={<Navigate to="/login" replace />} />
