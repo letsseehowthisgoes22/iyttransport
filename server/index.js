@@ -10,6 +10,7 @@ require('dotenv').config();
 const Database = require('./database');
 const authRoutes = require('./routes/auth');
 const transportRoutes = require('./routes/transports');
+const statementRoutes = require('./routes/statements');
 
 const app = express();
 app.use(cors({
@@ -40,6 +41,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transports', transportRoutes);
+app.use('/api/statements', statementRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

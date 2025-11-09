@@ -1,0 +1,11 @@
+Date,Name,Type,Status,Currency,Gross,Fee,Net,Balance,Transaction ID
+01/15/2024,ABC Transport Service,Payment,Completed,USD,2500.00,-72.75,2427.25,5427.25,1A2B3C4D5E
+01/15/2024,XYZ Medical Center,Payment,Completed,USD,1800.00,-52.50,1747.50,7174.75,2B3C4D5E6F
+01/16/2024,Staff Payroll - John Doe,Payment,Completed,USD,-500.00,0.00,-500.00,6674.75,3C4D5E6F7G
+01/17/2024,Office Supplies Co,Payment,Completed,USD,-125.00,0.00,-125.00,6549.75,4D5E6F7G8H
+01/18/2024,Transfer to Bank,Bank Transfer,Completed,USD,-5000.00,0.00,-5000.00,1549.75,5E6F7G8H9I
+01/20/2024,Healthcare Provider Inc,Payment,Completed,USD,3200.00,-93.30,3106.70,4656.45,6F7G8H9I0J
+01/22/2024,Staff Payroll - Jane Smith,Payment,Completed,USD,-550.00,0.00,-550.00,4106.45,7G8H9I0J1K
+01/25/2024,Premium Transport LLC,Payment,Completed,USD,2800.00,-81.60,2718.40,6824.85,8H9I0J1K2L
+01/28/2024,Medical Equipment Rental,Payment,Completed,USD,-200.00,0.00,-200.00,6624.85,9I0J1K2L3M
+01/30/2024,Transfer to Bank,Bank Transfer,Completed,USD,-4000.00,0.00,-4000.00,2624.85,0J1K2L3M4N
